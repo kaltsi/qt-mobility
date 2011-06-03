@@ -893,6 +893,8 @@ QMap<QString, QMap<QString, QContactDetailDefinition> > QContactManagerEngine::s
     fields.insert(QContactOrganization::FieldName, f);
     fields.insert(QContactOrganization::FieldLocation, f);
     fields.insert(QContactOrganization::FieldTitle, f);
+    fields.insert(QContactOrganization::FieldAssistantName, f);
+    fields.insert(QContactOrganization::FieldRole, f);
     f.setDataType(QVariant::Url);
     fields.insert(QContactOrganization::FieldLogoUrl, f);
     f.setDataType(QVariant::StringList);

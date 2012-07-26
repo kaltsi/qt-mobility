@@ -59,7 +59,8 @@
     }
 #  else
 #  define Q_SCOPED_STATIC_DEFINE(TYPE, SCOPE, NAME)                     \
-    Q_GLOBAL_STATIC_INIT(TYPE, NAME);                                   \
+    static QGlobalStatic<TYPE > this_##NAME                             \
+                = { Q_BASIC_ATOMIC_INITIALIZER(0), false };             \
     TYPE *SCOPE::NAME()                                                 \
     {                                                                   \
         if (!this_##NAME.pointer && !this_##NAME.destroyed) {           \

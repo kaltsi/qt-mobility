@@ -204,8 +204,11 @@ symbian {
         DEFINES += QT_NO_OPENVG
     }
 }
+meego {
+    SOURCES += qgraphicsvideoitem_overlay.cpp
+}
 
-!maemo*:!symbian {
+!meego:!maemo*:!symbian {
     SOURCES += qgraphicsvideoitem.cpp
 }
 

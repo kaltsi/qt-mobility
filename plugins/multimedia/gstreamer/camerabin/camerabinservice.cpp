@@ -119,9 +119,10 @@ CameraBinService::CameraBinService(const QString &service, QObject *parent):
 #endif
 
 
-#ifdef Q_WS_MAEMO_6
+#if defined(Q_WS_MAEMO_6)
         m_videoWindow = new QGstreamerVideoWindow(this, "omapxvsink");
-        //m_videoWindow = new QGstreamerVideoWindow(this);
+#elif defined(Q_WS_MEEGO)
+        m_videoWindow = new QGstreamerVideoWindow(this);
 #else
         m_videoWindow = new QGstreamerVideoOverlay(this);
 #endif

@@ -401,6 +401,7 @@ GstElement *CameraBinSession::buildVideoSrc()
     } else {
         QList<QByteArray> candidates;
         candidates << "subdevsrc"
+                   << "mcsrc"
                    << "v4l2camsrc"
                    << "v4l2src"
                    << "autovideosrc";

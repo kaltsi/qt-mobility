@@ -52,6 +52,10 @@ maemo6 {
     }
 }
 
+meego {
+  PKGCONFIG +=gstreamer-plugins-bad-free-0.10
+}
+
 # Input
 HEADERS += \
     qgstreamermessage.h \

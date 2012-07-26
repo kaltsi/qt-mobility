@@ -49,7 +49,7 @@ CameraBinAudioEncoder::CameraBinAudioEncoder(QObject *parent)
 {
     QList<QByteArray> codecCandidates;
 
-#if defined(Q_WS_MAEMO_5) || defined(Q_WS_MAEMO_6)
+#if defined(Q_WS_MAEMO_5) || defined(Q_WS_MAEMO_6) || defined(Q_WS_MEEGO)
     codecCandidates << "audio/AAC" << "audio/PCM" << "audio/AMR" << "audio/AMR-WB" << "audio/speex"
                     << "audio/ADPCM" << "audio/iLBC" << "audio/vorbis" << "audio/mpeg" << "audio/FLAC";
 

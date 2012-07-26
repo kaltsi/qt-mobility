@@ -49,7 +49,7 @@ CameraBinVideoEncoder::CameraBinVideoEncoder(CameraBinSession *session)
     :QVideoEncoderControl(session), m_session(session)
 {
     QList<QByteArray> codecCandidates;
-#if defined(Q_WS_MAEMO_5)
+#if defined(Q_WS_MAEMO_5) || defined(Q_WS_MEEGO)
     codecCandidates << "video/mpeg4" << "video/h264" << "video/h263" << "video/theora"
                     << "video/mpeg2" << "video/mpeg1" << "video/mjpeg" << "video/VP8" << "video/h261";
 

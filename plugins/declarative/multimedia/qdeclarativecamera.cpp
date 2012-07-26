@@ -193,6 +193,9 @@ void QDeclarativeCamera::_q_updateImageSettings()
     if (m_imageSettingsChanged) {
         m_imageSettingsChanged = false;
         m_capture->setEncodingSettings(m_imageSettings);
+        m_capture->setProperty("previewResolution", m_previewResolution);
+        m_camera->setProperty("viewfinderResolution", m_viewfinderResolution);
+        m_camera->setProperty("viewfinderFramerate", m_viewfinderFramerate);
     }
 }
 
@@ -259,6 +262,7 @@ QDeclarativeCamera::QDeclarativeCamera(QDeclarativeItem *parent) :
     m_camera(0),
     m_viewfinderItem(0),
     m_imageSettingsChanged(false),
+    m_viewfinderFramerate(0),
     m_pendingState(ActiveState),
     m_isStateSet(false)
 {
@@ -927,6 +931,21 @@ QSize QDeclarativeCamera::captureResolution() const
     return m_imageSettings.resolution();
 }
 
+QSize QDeclarativeCamera::previewResolution() const
+{
+    return m_previewResolution;
+}
+
+QSize QDeclarativeCamera::viewfinderResolution() const
+{
+    return m_viewfinderResolution;
+}
+
+qreal QDeclarativeCamera::viewfinderFramerate() const
+{
+    return m_viewfinderFramerate;
+}
+
 void QDeclarativeCamera::setCaptureResolution(const QSize &resolution)
 {
     if (m_imageSettings.resolution() != resolution) {
@@ -938,6 +957,48 @@ void QDeclarativeCamera::setCaptureResolution(const QSize &resolution)
         }
 
         emit captureResolutionChanged(resolution);
+    }
+}
+
+void QDeclarativeCamera::setPreviewResolution(const QSize &resolution)
+{
+    if (m_previewResolution != resolution) {
+        m_previewResolution = resolution;
+
+        if (!m_imageSettingsChanged) {
+            m_imageSettingsChanged = true;
+            QMetaObject::invokeMethod(this, "_q_updateImageSettings", Qt::QueuedConnection);
+        }
+
+        emit previewResolutionChanged(resolution);
+    }
+}
+
+void QDeclarativeCamera::setViewfinderResolution(const QSize &resolution)
+{
+    if (m_viewfinderResolution != resolution) {
+        m_viewfinderResolution = resolution;
+
+        if (!m_imageSettingsChanged) {
+            m_imageSettingsChanged = true;
+            QMetaObject::invokeMethod(this, "_q_updateImageSettings", Qt::QueuedConnection);
+        }
+
+        emit viewfinderResolutionChanged(resolution);
+    }
+}
+
+void QDeclarativeCamera::setViewfinderFramerate(qreal framerate)
+{
+    if (m_viewfinderFramerate != framerate) {
+        m_viewfinderFramerate = framerate;
+
+        if (!m_imageSettingsChanged) {
+            m_imageSettingsChanged = true;
+            QMetaObject::invokeMethod(this, "_q_updateImageSettings", Qt::QueuedConnection);
+        }
+
+        emit viewfinderFramerateChanged(framerate);
     }
 }
 

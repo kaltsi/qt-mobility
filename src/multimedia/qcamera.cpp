@@ -251,6 +251,16 @@ void QCameraPrivate::initControls()
         deviceControl = qobject_cast<QVideoDeviceControl*>(service->requestControl(QVideoDeviceControl_iid));
 
         if (control) {
+            QSize resolution = q->property("viewfinderResolution").toSize();
+            if(resolution.isValid())
+                control->setProperty("viewfinderResolution", resolution);
+
+            qreal framerate = q->property("viewfinderFramerate").toReal();
+            if(framerate > 0.0)
+                control->setProperty("viewfinderFramerate", framerate);
+
+            q->installEventFilter(control);
+
             q->connect(control, SIGNAL(stateChanged(QCamera::State)), q, SLOT(_q_updateState(QCamera::State)));
             q->connect(control, SIGNAL(statusChanged(QCamera::Status)), q, SIGNAL(statusChanged(QCamera::Status)));
             q->connect(control, SIGNAL(captureModeChanged(QCamera::CaptureMode)),

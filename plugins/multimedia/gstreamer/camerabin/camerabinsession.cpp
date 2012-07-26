@@ -163,7 +163,8 @@ CameraBinSession::CameraBinSession(QObject *parent)
      m_capsFilter(0),
      m_fileSink(0),
      m_audioEncoder(0),
-     m_muxer(0)
+     m_muxer(0),
+     m_viewfinderFramerate(0)
 {
     m_pipeline = gst_element_factory_make("camerabin", "camerabin");
     g_signal_connect(G_OBJECT(m_pipeline), "notify::idle", G_CALLBACK(updateBusyStatus), this);
@@ -318,17 +319,18 @@ void CameraBinSession::setupCaptureResolution()
                 resolution = resolutions.last();
         }
 
-        QString previewCapsString = PREVIEW_CAPS_4_3;
-        QSize viewfinderResolution = VIEWFINDER_RESOLUTION_4x3;
-
         if (!resolution.isEmpty()) {
 #if CAMERABIN_DEBUG
             qDebug() << Q_FUNC_INFO << "set image resolution" << resolution;
 #endif
             g_signal_emit_by_name(G_OBJECT(m_pipeline), SET_IMAGE_RESOLUTION, resolution.width(), resolution.height(), NULL);
+        }
 
-            previewCapsString = QString("video/x-raw-rgb, width = (int) %1, height = (int) 480")
-                    .arg(resolution.width()*480/resolution.height());
+
+        // Select viewfinder resolution
+        QSize viewfinderResolution = m_viewfinderResolution;
+        if(viewfinderResolution.isEmpty()) {
+            viewfinderResolution = VIEWFINDER_RESOLUTION_4x3;
 
             if (!resolution.isEmpty()) {
                 qreal aspectRatio = qreal(resolution.width()) / resolution.height();
@@ -340,6 +342,45 @@ void CameraBinSession::setupCaptureResolution()
                     viewfinderResolution = VIEWFINDER_RESOLUTION_3x2;
             }
         }
+
+        // Select viewfinder framerate
+        QPair<int,int> viewfinderFrameRate = QPair<int,int>(0,1); // Framerate 0/1 = max rate
+        if( m_viewfinderFramerate > 0.0 )
+            viewfinderFrameRate = CameraBinVideoEncoder::rateAsRational(m_viewfinderFramerate);
+
+        // Select preview caps
+        QString previewCapsString = PREVIEW_CAPS_4_3;
+
+        // No point to define preview resolution if capture resolution is not defined
+        if( !resolution.isEmpty() )
+        {
+            QSize previewImageResolution = m_previewResolution;
+            if(previewImageResolution.isEmpty() ||
+                    previewImageResolution.width() > resolution.width() ||
+                    previewImageResolution.height() > resolution.height()) {
+                previewImageResolution = QSize(resolution.width()*480/resolution.height(), 480);
+            } else {
+                // Preview resolution must have the same aspect ratio than capture resolution
+                // Otherwise the preview image gets scaled and original aspect ratio is lost
+                qreal xRatio = (qreal)previewImageResolution.width() / (qreal)resolution.width();
+                qreal yRatio = (qreal)previewImageResolution.height() / (qreal)resolution.height();
+
+                if(xRatio > yRatio)
+                    previewImageResolution.setWidth(resolution.width() * yRatio);
+                else if(xRatio < yRatio)
+                    previewImageResolution.setHeight(resolution.height() * xRatio );
+            }
+
+            previewCapsString = QString("video/x-raw-rgb, width = (int) %1, height = (int) %2")
+                    .arg(previewImageResolution.width()).arg(previewImageResolution.height());
+        }
+
+#if CAMERABIN_DEBUG
+        qDebug() << Q_FUNC_INFO << "set preview caps: " << previewCapsString;
+        qDebug() << Q_FUNC_INFO << "set viewfinder resolution: " << viewfinderResolution;
+        qDebug() << Q_FUNC_INFO << "set viewfinder framerate: " << viewfinderFrameRate.first << "/" << viewfinderFrameRate.second;
+#endif
+
 
         GstCaps *previewCaps = gst_caps_from_string(previewCapsString.toLatin1());
         g_object_set(G_OBJECT(m_pipeline), PREVIEW_CAPS_PROPERTY, previewCaps, NULL);
@@ -357,8 +398,8 @@ void CameraBinSession::setupCaptureResolution()
                               SET_VIDEO_RESOLUTION_FPS,
                               viewfinderResolution.width(),
                               viewfinderResolution.height(),
-                              0, // maximum framerate
-                              1, // framerate denom
+                              viewfinderFrameRate.first,
+                              viewfinderFrameRate.second,
                               NULL);
     }
 
@@ -950,6 +991,45 @@ void CameraBinSession::handleBusMessage(const QGstreamerMessage &message)
             m_viewfinderInterface->handleBusMessage(gm);
 
         emit busMessage(message);
+    }
+}
+
+QSize CameraBinSession::viewfinderResolution() const
+{
+    return m_viewfinderResolution;
+}
+
+qreal CameraBinSession::viewfinderFramerate() const
+{
+    return m_viewfinderFramerate;
+}
+
+QSize CameraBinSession::previewResolution() const
+{
+    return m_previewResolution;
+}
+
+void CameraBinSession::setViewfinderResolution(const QSize& resolution)
+{
+    if(m_viewfinderResolution != resolution ) {
+        m_viewfinderResolution = resolution;
+        emit viewfinderResolutionChanged(m_viewfinderResolution);
+    }
+}
+
+void CameraBinSession::setViewfinderFramerate(qreal framerate)
+{
+    if(m_viewfinderFramerate != framerate ) {
+        m_viewfinderFramerate = framerate;
+        emit viewfinderFramerateChanged(m_viewfinderFramerate);
+    }
+}
+
+void CameraBinSession::setPreviewResolution(const QSize& resolution)
+{
+    if(m_previewResolution != resolution) {
+        m_previewResolution = resolution;
+        emit previewResolutionChanged(m_previewResolution);
     }
 }
 

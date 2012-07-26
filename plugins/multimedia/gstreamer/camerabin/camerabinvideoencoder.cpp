@@ -308,7 +308,7 @@ GstElement *CameraBinVideoEncoder::createEncoder()
     return encoderElement;
 }
 
-QPair<int,int> CameraBinVideoEncoder::rateAsRational(qreal frameRate) const
+QPair<int,int> CameraBinVideoEncoder::rateAsRational(qreal frameRate)
 {
     if (frameRate > 0.001) {
         //convert to rational number

@@ -44,6 +44,7 @@
 #define CAMERABINIMAGECAPTURECONTROL_H
 
 #include <qcameraimagecapturecontrol.h>
+#include <QSize>
 #include "camerabinsession.h"
 
 QT_USE_NAMESPACE
@@ -51,6 +52,7 @@ QT_USE_NAMESPACE
 class CameraBinImageCapture : public QCameraImageCaptureControl
 {
     Q_OBJECT
+    Q_PROPERTY(QSize previewResolution READ previewResolution WRITE setPreviewResolution NOTIFY previewResolutionChanged)
 public:
     CameraBinImageCapture(CameraBinSession *session);
     virtual ~CameraBinImageCapture();
@@ -61,6 +63,16 @@ public:
     bool isReadyForCapture() const;
     int capture(const QString &fileName);
     void cancelCapture();
+
+    QSize previewResolution() const;
+
+    bool eventFilter(QObject *watched, QEvent *event );
+
+public slots:
+    void setPreviewResolution(const QSize& resolution);
+
+signals:
+    void previewResolutionChanged(const QSize&);
 
 private slots:
     void updateState();

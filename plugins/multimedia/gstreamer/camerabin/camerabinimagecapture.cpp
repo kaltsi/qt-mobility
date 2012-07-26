@@ -49,6 +49,7 @@
 #include <QtCore/qdebug.h>
 #include <QtCore/qbuffer.h>
 #include <QtGui/qimagereader.h>
+#include <QDynamicPropertyChangeEvent>
 
 //#define DEBUG_CAPTURE
 
@@ -88,6 +89,7 @@ CameraBinImageCapture::CameraBinImageCapture(CameraBinSession *session)
     connect(m_session, SIGNAL(imageExposed(int)), this, SIGNAL(imageExposed(int)));
     connect(m_session, SIGNAL(imageCaptured(int,QImage)), this, SIGNAL(imageCaptured(int,QImage)));
     connect(m_session, SIGNAL(busMessage(QGstreamerMessage)), SLOT(handleBusMessage(QGstreamerMessage)));
+    connect(m_session, SIGNAL(previewResolutionChanged(QSize)), this, SIGNAL(previewResolutionChanged(QSize)));
 
     g_signal_connect(G_OBJECT(m_session->cameraBin()), IMAGE_DONE_SIGNAL, G_CALLBACK(handleImageSaved), this);
 }
@@ -119,6 +121,32 @@ int CameraBinImageCapture::capture(const QString &fileName)
 
 void CameraBinImageCapture::cancelCapture()
 {
+}
+
+QSize CameraBinImageCapture::previewResolution() const
+{
+    return m_session->previewResolution();
+}
+
+void CameraBinImageCapture::setPreviewResolution(const QSize& resolution)
+{
+    m_session->setPreviewResolution(resolution);
+}
+
+bool CameraBinImageCapture::eventFilter(QObject *watched, QEvent *event )
+{
+    if(event->type() == QEvent::DynamicPropertyChange ) {
+        QDynamicPropertyChangeEvent* propertyChangeEvent = static_cast<QDynamicPropertyChangeEvent*>(event);
+
+        if(propertyChangeEvent->propertyName() == "previewResolution") {
+            QSize resolution = watched->property("previewResolution").toSize();
+#ifdef CAMEABIN_DEBUG
+            qDebug() << Q_FUNC_INFO << "Preview resolution changed: " << resolution;
+#endif
+            setPreviewResolution(resolution);
+        }
+    }
+    return QCameraImageCaptureControl::eventFilter(watched, event);
 }
 
 void CameraBinImageCapture::updateState()

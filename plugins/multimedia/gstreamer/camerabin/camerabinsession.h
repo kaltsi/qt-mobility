@@ -80,6 +80,10 @@ class CameraBinSession : public QObject, public QGstreamerSyncEventFilter
 {
     Q_OBJECT
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
+    Q_PROPERTY(QSize viewfinderResolution READ viewfinderResolution WRITE setViewfinderResolution NOTIFY viewfinderResolutionChanged)
+    Q_PROPERTY(qreal viewfinderFramerate READ viewfinderFramerate WRITE setViewfinderFramerate NOTIFY viewfinderFramerateChanged)
+    Q_PROPERTY(QSize previewResolution READ previewResolution WRITE setPreviewResolution NOTIFY previewResolutionChanged)
+    Q_PROPERTY(QSize previewResolution READ previewResolution WRITE setPreviewResolution NOTIFY previewResolutionChanged)
 public:
     enum CameraRole {
        FrontCamera, // Secondary camera
@@ -148,6 +152,10 @@ public:
 
     bool processSyncMessage(const QGstreamerMessage &message);
 
+    QSize viewfinderResolution() const;
+    qreal viewfinderFramerate() const;
+    QSize previewResolution() const;
+
 signals:
     void stateChanged(QCamera::State state);
     void durationChanged(qint64 duration);
@@ -159,6 +167,9 @@ signals:
     void readyChanged(bool);
     void busyChanged(bool);
     void busMessage(const QGstreamerMessage &message);
+    void viewfinderResolutionChanged(const QSize&);
+    void viewfinderFramerateChanged(qreal);
+    void previewResolutionChanged(const QSize&);
 
 public slots:
     void setDevice(const QString &device);
@@ -166,6 +177,9 @@ public slots:
     void setCaptureDevice(const QString &deviceName);
     void setMetaData(const QMap<QByteArray, QVariant>&);
     void setMuted(bool);
+    void setViewfinderResolution(const QSize& resolution);
+    void setViewfinderFramerate(qreal framerate);
+    void setPreviewResolution(const QSize& resolution);
 
 private slots:
     void handleBusMessage(const QGstreamerMessage &message);
@@ -230,6 +244,10 @@ private:
 public:
     QString m_imageFileName;
     int m_requestId;
+
+    QSize m_viewfinderResolution;
+    qreal m_viewfinderFramerate;
+    QSize m_previewResolution;
 };
 
 #endif // CAMERABINCAPTURESESSION_MAEMO_H

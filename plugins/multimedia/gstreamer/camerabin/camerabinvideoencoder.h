@@ -66,7 +66,7 @@ public:
     QList< qreal > supportedFrameRates(const QVideoEncoderSettings &settings = QVideoEncoderSettings(),
                                        bool *continuous = 0) const;
 
-    QPair<int,int> rateAsRational(qreal) const;
+    static QPair<int,int> rateAsRational(qreal);
 
     QStringList supportedVideoCodecs() const;
     QString videoCodecDescription(const QString &codecName) const;

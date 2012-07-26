@@ -91,6 +91,9 @@ class QDeclarativeCamera : public QDeclarativeItem
     Q_PROPERTY(int manualWhiteBalance READ manualWhiteBalance WRITE setManualWhiteBalance NOTIFY manualWhiteBalanceChanged)
 
     Q_PROPERTY(QSize captureResolution READ captureResolution WRITE setCaptureResolution NOTIFY captureResolutionChanged)
+    Q_PROPERTY(QSize previewResolution READ previewResolution WRITE setPreviewResolution NOTIFY previewResolutionChanged)
+    Q_PROPERTY(QSize viewfinderResolution READ viewfinderResolution WRITE setViewfinderResolution NOTIFY viewfinderResolutionChanged)
+    Q_PROPERTY(qreal viewfinderFramerate READ viewfinderFramerate WRITE setViewfinderFramerate NOTIFY viewfinderFramerateChanged)
 
     Q_PROPERTY(qreal opticalZoom READ opticalZoom WRITE setOpticalZoom NOTIFY opticalZoomChanged)
     Q_PROPERTY(qreal maximumOpticalZoom READ maximumOpticalZoom NOTIFY maximumOpticalZoomChanged)
@@ -194,6 +197,9 @@ public:
     int manualWhiteBalance() const;
 
     QSize captureResolution() const;
+    QSize previewResolution() const;
+    QSize viewfinderResolution() const;
+    qreal viewfinderFramerate() const;
 
     qreal maximumOpticalZoom() const;
     qreal maximumDigitalZoom() const;
@@ -221,6 +227,9 @@ public Q_SLOTS:
     void setManualWhiteBalance(int colorTemp) const;
 
     void setCaptureResolution(const QSize &size);
+    void setPreviewResolution(const QSize &size);
+    void setViewfinderResolution(const QSize &size);
+    void setViewfinderFramerate(qreal framerate);
 
     void setOpticalZoom(qreal);
     void setDigitalZoom(qreal);
@@ -248,6 +257,9 @@ Q_SIGNALS:
     void manualWhiteBalanceChanged(int) const;
 
     void captureResolutionChanged(const QSize&);
+    void previewResolutionChanged(const QSize&);
+    void viewfinderResolutionChanged(const QSize&);
+    void viewfinderFramerateChanged(qreal);
 
     void opticalZoomChanged(qreal);
     void digitalZoomChanged(qreal);
@@ -286,6 +298,9 @@ private:
     QTime m_focusFailedTime;
 
     QImageEncoderSettings m_imageSettings;
+    QSize m_previewResolution;
+    QSize m_viewfinderResolution;
+    qreal m_viewfinderFramerate;
     bool m_imageSettingsChanged;
 
     State m_pendingState;

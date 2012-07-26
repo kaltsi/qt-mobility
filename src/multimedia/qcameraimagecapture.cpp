@@ -242,6 +242,12 @@ bool QCameraImageCapture::setMediaObject(QMediaObject *mediaObject)
                 d->bufferFormatControl = qobject_cast<QCameraCaptureBufferFormatControl *>(
                     service->requestControl(QCameraCaptureBufferFormatControl_iid));
 
+                QSize resolution = property("previewResolution").toSize();
+                if(resolution.isValid())
+                    d->control->setProperty("previewResolution", resolution);
+
+                installEventFilter(d->control);
+
                 connect(d->control, SIGNAL(imageExposed(int)),
                         this, SIGNAL(imageExposed(int)));
                 connect(d->control, SIGNAL(imageCaptured(int,QImage)),

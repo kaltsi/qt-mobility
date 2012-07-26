@@ -63,6 +63,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <linux/videodev2.h>
+#include <QDynamicPropertyChangeEvent>
 
 //#define CAMEABIN_DEBUG 1
 #define ENUM_NAME(c,e,v) (c::staticMetaObject.enumerator(c::staticMetaObject.indexOfEnumerator(e)).valueToKey((v)))
@@ -95,6 +96,15 @@ CameraBinControl::CameraBinControl(CameraBinSession *session)
             SLOT(handleCameraError(int,QString)));
     connect(m_session->recorderControl(), SIGNAL(stateChanged(QMediaRecorder::State)),
             SLOT(updateRecorderResources(QMediaRecorder::State)));
+     connect(m_session, SIGNAL(viewfinderResolutionChanged(QSize)),
+             this, SLOT(reloadLater()));
+     connect(m_session, SIGNAL(viewfinderResolutionChanged(QSize)),
+             this, SIGNAL(viewfinderResolutionChanged(QSize)));
+     connect(m_session, SIGNAL(viewfinderFramerateChanged(qreal)),
+             this, SLOT(reloadLater()));
+     connect(m_session, SIGNAL(viewfinderFramerateChanged(qreal)),
+             this, SIGNAL(viewfinderFramerateChanged(qreal)));
+
 
     m_resourcePolicy = new CamerabinResourcePolicy(this);
     connect(m_resourcePolicy, SIGNAL(resourcesGranted()),
@@ -263,6 +273,16 @@ void CameraBinControl::reloadLater()
     }
 }
 
+void CameraBinControl::setViewfinderResolution(const QSize& resolution)
+{
+    m_session->setViewfinderResolution(resolution);
+}
+
+void CameraBinControl::setViewfinderFramerate(qreal framerate)
+{
+    m_session->setViewfinderFramerate(framerate);
+}
+
 void CameraBinControl::handleResourcesLost()
 {
 #ifdef CAMEABIN_DEBUG
@@ -378,4 +398,37 @@ void CameraBinControl::updateRecorderResources(QMediaRecorder::State recorderSta
         if (m_resourcePolicy->resourceSet() != resourceSet)
             m_resourcePolicy->setResourceSet(resourceSet);
     }
+}
+
+QSize CameraBinControl::viewfinderResolution() const
+{
+    return m_session->viewfinderResolution();
+}
+
+qreal CameraBinControl::viewfinderFramerate() const
+{
+    return m_session->viewfinderFramerate();
+}
+
+bool CameraBinControl::eventFilter(QObject *watched, QEvent *event )
+{
+    if(event->type() == QEvent::DynamicPropertyChange ) {
+        QDynamicPropertyChangeEvent* propertyChangeEvent = static_cast<QDynamicPropertyChangeEvent*>(event);
+
+        if(propertyChangeEvent->propertyName() == "viewfinderResolution") {
+            QSize resolution = watched->property("viewfinderResolution").toSize();
+#ifdef CAMEABIN_DEBUG
+            qDebug() << Q_FUNC_INFO << "Viewfinder resolution changed: " << resolution;
+#endif
+            setViewfinderResolution(resolution);
+
+        } else if(propertyChangeEvent->propertyName() == "viewfinderFramerate") {
+            qreal framerate = watched->property("viewfinderFramerate").toReal();
+#ifdef CAMEABIN_DEBUG
+            qDebug() << Q_FUNC_INFO << "Viewfinder framerate changed: " << framerate;
+#endif
+            setViewfinderFramerate(framerate);
+        }
+    }
+    return QCameraControl::eventFilter(watched, event);
 }

@@ -109,6 +109,8 @@ CameraBinService::CameraBinService(const QString &service, QObject *parent):
         connect(m_videoInputDevice, SIGNAL(selectedDeviceChanged(QString)),
                 m_captureSession, SLOT(setDevice(QString)));
 
+        connect(m_imageCaptureControl, SIGNAL(previewResolutionChanged(QSize)), m_cameraControl, SLOT(reloadLater()));
+
         if (m_videoInputDevice->deviceCount())
             m_captureSession->setDevice(m_videoInputDevice->deviceName(m_videoInputDevice->selectedDevice()));        
 

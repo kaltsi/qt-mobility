@@ -44,6 +44,7 @@
 #define CAMERABINCONTROL_H
 
 #include <QHash>
+#include <QSize>
 #include <qcameracontrol.h>
 #include <qmediarecorder.h>
 #include "camerabinsession.h"
@@ -56,6 +57,8 @@ class CameraBinControl : public QCameraControl
 {
     Q_OBJECT
     Q_PROPERTY(bool viewfinderColorSpaceConversion READ viewfinderColorSpaceConversion WRITE setViewfinderColorSpaceConversion)
+    Q_PROPERTY(QSize viewfinderResolution READ viewfinderResolution WRITE setViewfinderResolution NOTIFY viewfinderResolutionChanged)
+    Q_PROPERTY(qreal viewfinderFramerate READ viewfinderFramerate WRITE setViewfinderFramerate NOTIFY viewfinderFramerateChanged)
 public:
     CameraBinControl( CameraBinSession *session );
     virtual ~CameraBinControl();
@@ -74,9 +77,21 @@ public:
     bool canChangeProperty(PropertyChangeType changeType, QCamera::Status status) const;
     bool viewfinderColorSpaceConversion() const;
 
+    QSize viewfinderResolution() const;
+    qreal viewfinderFramerate() const;
+
+    bool eventFilter(QObject *watched, QEvent *event );
 public slots:
     void reloadLater();
     void setViewfinderColorSpaceConversion(bool enabled);
+
+    void setViewfinderResolution(const QSize& resolution);
+    void setViewfinderFramerate(qreal framerate);
+
+signals:
+
+    void viewfinderResolutionChanged(const QSize&);
+    void viewfinderFramerateChanged(qreal);
 
 private slots:
     void updateStatus();

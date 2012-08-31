@@ -82,8 +82,10 @@ QGstreamerPlayerService::QGstreamerPlayerService(QObject *parent):
 
 #if defined(Q_WS_X11) && !defined(QT_NO_XVIDEO)
 
-#ifdef Q_WS_MAEMO_6
+#if defined(Q_WS_MAEMO_6)
     m_videoWindow = new QGstreamerVideoWindow(this, "omapxvsink");
+#elif defined(Q_WS_MEEGO)
+    m_videoWindow = new QGstreamerVideoWindow(this);
 #else
     m_videoWindow = new QGstreamerVideoOverlay(this);
 #endif

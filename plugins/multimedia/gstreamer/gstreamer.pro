@@ -38,6 +38,10 @@ maemo5 {
   QT += dbus
 }
 
+meego {
+    PKGCONFIG += libresourceqt1
+}
+
 maemo6 {
     HEADERS += camerabuttonlistener_meego.h
     SOURCES += camerabuttonlistener_meego.cpp

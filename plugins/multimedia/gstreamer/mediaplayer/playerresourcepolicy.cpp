@@ -41,7 +41,7 @@
 
 #include "playerresourcepolicy.h"
 
-#ifdef Q_WS_MAEMO_6
+#if defined(Q_WS_MAEMO_6) || defined(Q_WS_MEEGO)
 #define HAVE_RESOURCE_POLICY
 #endif
 

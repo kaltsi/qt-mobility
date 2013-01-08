@@ -2821,6 +2821,7 @@ QByteArray QSystemDeviceInfoLinuxCommonPrivate::uniqueDeviceID()
     QCryptographicHash hash(QCryptographicHash::Sha1);
 #if !defined(QT_NO_DBUS)
 #if !defined(QT_NO_HAL)
+    // For backward compatibility, return HAL UUID if available
     if (halIsAvailable) {
         QHalDeviceInterface iface("/org/freedesktop/Hal/devices/computer", this);
         QString id;
@@ -2831,19 +2832,27 @@ QByteArray QSystemDeviceInfoLinuxCommonPrivate::uniqueDeviceID()
         }
     }
 #endif // QT_NO_HAL
-#if defined(Q_WS_MEEGO)
-    QDBusInterface connectionInterface("org.freedesktop.PolicyKit1", "/org/freedesktop/PolicyKit1/Authority", "org.freedesktop.DBus.Peer",
-                                       QDBusConnection::systemBus(), this);
-    if (!connectionInterface.isValid())
-        qDebug() <<connectionInterface.lastError().message()<< "not valid";
 
-    QDBusReply<QString> reply = connectionInterface.call("GetMachineId");
-    QString uid = reply.value();
-    hash.addData(uid.toLocal8Bit());
+    // Return the DBUS machine ID
+    QByteArray dbusId = QDBusConnection::localMachineId();
+    hash.addData(dbusId);
     return hash.result().toHex();
-#endif // Q_WS_MEEGO
 #endif // QT_NO_DBUS
-    hash.addData(QString::number(gethostid()).toLocal8Bit());
+
+    QSettings systemInfoSettings(QLatin1String("Nokia"), QLatin1String("SystemInfo"));
+
+    const QString key(QLatin1String("localMachineId"));
+    QVariant value = systemInfoSettings.value(key);
+    if (!value.isValid()) {
+        // Create a persistent value for this purpose
+        QByteArray printable = QUuid::createUuid().toString().toLocal8Bit();
+        systemInfoSettings.setValue(key, QVariant(printable));
+
+        hash.addData(printable);
+    } else {
+        hash.addData(value.value<QByteArray>());
+    }
+
     return hash.result().toHex();
 }
 

@@ -54,8 +54,11 @@
 #include <policy/resource-set.h>
 #endif
 
+#include <QString>
+
 PlayerResourcePolicy::PlayerResourcePolicy(QObject *parent) :
     QObject(parent),
+    m_errorState(false),
     m_videoEnabled(true),
     m_resourceSet(0),
     m_status(PlayerResourcePolicy::Initial)
@@ -72,6 +75,10 @@ PlayerResourcePolicy::PlayerResourcePolicy(QObject *parent) :
     m_resourceSet->addResource(ResourcePolicy::VideoPlaybackType);
     m_resourceSet->update();
 
+    connect(m_resourceSet, SIGNAL(managerIsUp()),
+            this, SLOT(handleManagerIsUp()));
+    connect(m_resourceSet, SIGNAL(errorCallback(quint32, const char*)),
+            this, SLOT(handleError(quint32, const char*)));
     connect(m_resourceSet, SIGNAL(resourcesGranted(const QList<ResourcePolicy::ResourceType>)),
             this, SLOT(handleResourcesGranted()));
     connect(m_resourceSet, SIGNAL(resourcesDenied()),
@@ -80,6 +87,8 @@ PlayerResourcePolicy::PlayerResourcePolicy(QObject *parent) :
             this, SLOT(handleResourcesLost()));
     connect(m_resourceSet, SIGNAL(resourcesReleasedByManager()),
             this, SLOT(handleResourcesLost()));
+
+    m_resourceSet->initAndConnect();
 #endif
 }
 
@@ -115,10 +124,13 @@ void PlayerResourcePolicy::acquire()
 #ifdef DEBUG_RESOURCE_POLICY
     qDebug() << Q_FUNC_INFO << "Acquire resource";
 #endif
-    m_status = RequestedResource;
-    m_resourceSet->acquire();
+    if (!m_errorState && m_status == Initial) {
+        m_status = RequestedResource;
+        m_resourceSet->acquire();
+    }
 #else
     m_status = GrantedResource;
+    emit resourcesGranted();
 #endif
 }
 
@@ -138,7 +150,8 @@ void PlayerResourcePolicy::release()
 
 bool PlayerResourcePolicy::isGranted() const
 {
-    return m_status == GrantedResource;
+    // Resources are always granted in error state, ie. cannot connect to manager
+    return m_errorState || m_status == GrantedResource;
 }
 
 bool PlayerResourcePolicy::isRequested() const
@@ -148,11 +161,13 @@ bool PlayerResourcePolicy::isRequested() const
 
 void PlayerResourcePolicy::handleResourcesGranted()
 {
-    m_status = GrantedResource;
 #ifdef DEBUG_RESOURCE_POLICY
     qDebug() << Q_FUNC_INFO << "Resource granted";
 #endif
-    emit resourcesGranted();
+    if (m_status != GrantedResource) {
+        m_status = GrantedResource;
+        emit resourcesGranted();
+    }
 }
 
 void PlayerResourcePolicy::handleResourcesDenied()
@@ -176,5 +191,42 @@ void PlayerResourcePolicy::handleResourcesLost()
 
 #ifdef HAVE_RESOURCE_POLICY
     m_resourceSet->release();
+#endif
+}
+
+void PlayerResourcePolicy::handleError(quint32 error, const char *error_msg)
+{
+#ifdef HAVE_RESOURCE_POLICY
+    if (error_msg) {
+        QString str = QString::fromAscii(error_msg);
+
+        if (str == "DBus.Error.ServiceUnknown") {
+            // Resource manager is not running or cannot connect to it.
+            // To prevent clients from waiting for resourcesGranted/resourcesDenied/resourcesLost
+            // signals indefinitely, emit resourcesGranted here.
+            m_errorState = true;
+            emit resourcesGranted();
+        }
+    }
+#endif
+}
+
+void PlayerResourcePolicy::handleManagerIsUp()
+{
+#ifdef HAVE_RESOURCE_POLICY
+
+#ifdef DEBUG_RESOURCE_POLICY
+    qDebug() << Q_FUNC_INFO << "Connected to Manager";
+#endif
+
+    bool oldErrorState = m_errorState;
+    m_errorState = false;
+
+    // If state was previously in error and user has requested resources already,
+    // try to acquire them now for real.
+    if (oldErrorState && (m_status == RequestedResource || m_status == GrantedResource)) {
+        m_status = RequestedResource;
+        m_resourceSet->acquire();
+    }
 #endif
 }

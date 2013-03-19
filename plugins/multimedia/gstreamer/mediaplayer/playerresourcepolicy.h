@@ -74,6 +74,8 @@ private Q_SLOTS:
     void handleResourcesGranted();
     void handleResourcesDenied();
     void handleResourcesLost();
+    void handleError(quint32 error, const char *error_msg);
+    void handleManagerIsUp();
 
 private:
     enum ResourceStatus {
@@ -82,6 +84,7 @@ private:
         GrantedResource
     };
 
+    bool m_errorState;
     bool m_videoEnabled;
     ResourcePolicy::ResourceSet *m_resourceSet;
     ResourceStatus m_status;

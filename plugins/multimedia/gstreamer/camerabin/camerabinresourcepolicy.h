@@ -75,8 +75,11 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void handleResourcesReleased();
+    void handleError(quint32 error, const char *error_msg);
+    void handleManagerIsUp();
 
 private:
+    bool m_errorState;
     ResourceSet m_resourceSet;
     ResourcePolicy::ResourceSet *m_resource;
     bool m_releasingResources;

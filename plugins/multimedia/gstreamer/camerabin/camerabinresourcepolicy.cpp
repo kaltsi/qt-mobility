@@ -55,8 +55,11 @@
 #include <policy/resource-set.h>
 #endif
 
+#include <QString>
+
 CamerabinResourcePolicy::CamerabinResourcePolicy(QObject *parent) :
     QObject(parent),
+    m_errorState(false),
     m_resourceSet(NoResources),
     m_releasingResources(false)
 {
@@ -65,6 +68,11 @@ CamerabinResourcePolicy::CamerabinResourcePolicy(QObject *parent) :
     m_resource = new ResourcePolicy::ResourceSet("camera");
     m_resource->setAlwaysReply();
     m_resource->initAndConnect();
+
+    connect(m_resource, SIGNAL(managerIsUp()),
+            this, SLOT(handleManagerIsUp()));
+    connect(m_resource, SIGNAL(errorCallback(quint32, const char*)),
+            this, SLOT(handleError(quint32, const char*)));
 
     connect(m_resource, SIGNAL(resourcesGranted(const QList<ResourcePolicy::ResourceType>)),
             SIGNAL(resourcesGranted()));
@@ -197,6 +205,11 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
         m_resource->addResourceObject(resource);
     }
 
+    if (m_errorState) {
+        emit resourcesGranted();
+        return;
+    }
+
     m_resource->update();
     if (set != NoResources) {
         m_resource->acquire();
@@ -211,6 +224,12 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
 
 bool CamerabinResourcePolicy::isResourcesGranted() const
 {
+    // If connection to resource manager is broken resources are always granted
+    // if there are any requested for.
+    if (m_errorState) {
+        return m_resourceSet != NoResources;
+    }
+
 #ifdef HAVE_RESOURCE_POLICY
     foreach (ResourcePolicy::Resource *resource, m_resource->resources())
         if (!resource->isOptional() && !resource->isGranted())
@@ -226,5 +245,38 @@ void CamerabinResourcePolicy::handleResourcesReleased()
     qDebug() << Q_FUNC_INFO;
 #endif
     m_releasingResources = false;
+#endif
+}
+
+void CamerabinResourcePolicy::handleError(quint32 error, const char *error_msg)
+{
+#ifdef HAVE_RESOURCE_POLICY
+    if (error_msg) {
+        QString str = QString::fromAscii(error_msg);
+
+        if (str == "DBus.Error.ServiceUnknown") {
+            // Resource manager is not running or cannot connect to it.
+            m_errorState = true;
+        }
+    }
+#endif
+}
+
+void CamerabinResourcePolicy::handleManagerIsUp()
+{
+#ifdef HAVE_RESOURCE_POLICY
+
+#ifdef DEBUG_RESOURCE_POLICY
+    qDebug() << Q_FUNC_INFO << "Connected to Manager";
+#endif
+
+    bool oldErrorState = m_errorState;
+    m_errorState = false;
+
+    // If state was previously in error and user has requested resources already,
+    // try to acquire them now for real.
+    if (oldErrorState && m_resourceSet != NoResources) {
+        m_resource->acquire();
+    }
 #endif
 }

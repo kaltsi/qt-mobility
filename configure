@@ -752,7 +752,7 @@ if [ "$shadowpath" != "$relpath" ]; then
 fi
 
 echo "Running $QMAKE_EXEC..."
-if $QMAKE_EXEC -makefile $QMKSPEC -recursive "$relpath/qtmobility.pro"; then
+if $QMAKE_EXEC -makefile $QMKSPEC QMAKE_CXXFLAGS_RELEASE="$CXXFLAGS" QMAKE_CFLAGS_RELEASE="$CFLAGS" QMAKE_CFLAGS_DEBUG="$CFLAGS" QMAKE_CXXFLAGS_DEBUG="$CXXFLAGS" -recursive "$relpath/qtmobility.pro"; then
     echo ""
     echo "configure has finished. You may run make or gmake to build the project now."
     echo ""
